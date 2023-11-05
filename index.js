@@ -35,7 +35,51 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+    const database= client.db('book-library').collection('bookcategory');
+    const booksDb=client.db('book-library').collection('books');
 
+    app.get('/book-category',async(req,res)=>{
+         
+        const result= await database.find({}).toArray();
+        res.send(result)
+
+    })
+//    get all books from books collection
+    app.get('/books',async(req,res)=>{
+         
+        const result= await booksDb.find({}).toArray();
+        res.send(result)
+
+    })
+
+    // get specific book from booksDb collection
+   
+    app.get('/books/:id',async(req,res)=>{
+         const id= req.params.id;
+         const filterId= {_id: new ObjectId(id)}
+        const result= await booksDb.find(filterId).toArray();
+        res.send(result)
+
+    })
+
+     
+    // find all books based on category 
+
+    app.get('/books/:id',async(req,res)=>{
+         const id= req.params.id;
+        const result= await booksDb.find({category:id}).toArray()
+        res.send(result)
+    })
+
+    //  add book to database 
+
+    app.post('/books',async(req,res)=>{
+        const body= req.body;
+        const result= await booksDb.insertOne(body)
+   console.log(result);     
+   res.send(result)
+      })
+    
    
 
 
@@ -46,7 +90,7 @@ async function run() {
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+   
   }
 }
 run().catch(console.dir);
