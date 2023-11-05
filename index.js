@@ -79,6 +79,8 @@ async function run() {
    console.log(result);     
    res.send(result)
       })
+
+
     
     //    post borrowed-books to borrowed-book collection
     
@@ -91,13 +93,57 @@ async function run() {
    res.send(result)
       })
 
-         //    post borrowed-books to borrowed-book collection
+         //    get borrowed-books from borrowed-book collection
       app.get('/borrowed-books',async(req,res)=>{
       
         const result= await borrowedBooks.find({}).toArray()
        console.log(result);     
    res.send(result)
       })
+
+
+      //  delete a book fromm borrowed-book  collection
+      app.delete('/borrowed-books/:id',async(req,res)=>{
+        const query= req.params.id;
+        const id = {_id: new ObjectId(query)}
+         const result= await borrowedBooks.deleteOne(id)
+         res.send(result)
+         
+    
+       }) 
+
+
+    //update book quantity after borrowed
+    
+    app.put('/books/:id',async(req,res)=>{
+     
+      
+        const user= req.body;
+
+        console.log(user);
+     const id= req.params.id
+        
+        const filter= {_id:new ObjectId(id)}
+        const options = { upsert: true };
+
+    
+        const quantityToNumber= Number(user.quantity)
+        console.log(quantityToNumber);
+        const updateUser= {
+            $set:{
+     
+            quantity: quantityToNumber-1,
+            
+
+            }
+        }
+        const result = await booksDb.updateOne(filter,updateUser)
+        res.send(result)
+          console.log(result,'update done');
+       })
+
+
+      
 
 
 
