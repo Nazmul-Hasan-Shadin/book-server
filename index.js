@@ -38,6 +38,35 @@ async function run() {
     const database= client.db('book-library').collection('bookcategory');
     const booksDb=client.db('book-library').collection('books');
     const borrowedBooks= client.db('book-library').collection('borrowed-books')
+
+//  verify token
+
+const verifyToken=async(req,res,next)=>{
+    const {token}= req.cookies;
+    console.log('usertoken is ', token);
+
+
+    if (!token) {
+       return res.status(401).send({message:'unauthorized'})
+
+     }
+
+ jwt.verify(token,secret,(error,decoded)=>{
+     if (error) {
+       return res.send({message:'error '})
+     }
+     console.log(decoded ,'decoded gmail');
+     req.user=decoded
+     
+     next()
+
+ })
+
+}
+
+
+
+
     app.get('/book-category',async(req,res)=>{
          
         const result= await database.find({}).toArray();
@@ -57,10 +86,33 @@ async function run() {
     app.get('/findbooksbyid/:id',async(req,res)=>{
          const id= req.params.id;
          const filterId= {_id: new ObjectId(id)}
-        const result= await booksDb.find(filterId).toArray();
+        const result= await booksDb.find(filterId).toArray()
         res.send(result)
 
     })
+
+    // find a single book and update its quantity
+
+    app.put('/findbooksbyid/:id',async(req,res)=>{
+        const id= req.params.id;
+        const filterId= {_id: new ObjectId(id)}
+        const updateQuantity= {
+            $inc:{
+     
+             quantity:1
+            
+
+            }
+
+            
+        }
+        const result = await booksDb.updateOne(filterId,updateQuantity)
+        console.log(result,'update done');
+      
+        res.send(result)
+          
+
+   })
 
      
     // find all books based on category 
@@ -70,6 +122,13 @@ async function run() {
         const result= await booksDb.find({category:id}).toArray()
         res.send(result)
     })
+    // signleBook load
+    app.get('/single-book/:id',async(req,res)=>{
+        const id= req.params.id;
+        const filter= {_id: new ObjectId(id)}
+       const result= await booksDb.findOne(filter)
+       res.send(result)
+   })
 
     //  add book to database 
 
@@ -86,19 +145,47 @@ async function run() {
     
     
     app.post('/borrowed-books',async(req,res)=>{
+         
         let body= req.body;
         body.borrowedDate= new Date()
+      
+        // find existing book
+   
+    //    const existBorrowedBook= await  borrowedBooks.findOne({
+    //      uniqueId: body.uniqueid,
+    //      email:body.email
+    //    })
+
+      const existBorrowedBook= await  borrowedBooks.findOne({
+         unique:"unique"
+         
+       })
+
+
+
+        if (existBorrowedBook) {
+       res.send({erro:'you have already  added this book'})
+        }
+      else{
+
         const result= await borrowedBooks.insertOne(body)
-   console.log(result);     
-   res.send(result)
+        console.log(result) 
+        res.send(result)
+      }
       })
 
          //    get borrowed-books from borrowed-book collection
-      app.get('/borrowed-books',async(req,res)=>{
-      
-        const result= await borrowedBooks.find({}).toArray()
-       console.log(result);     
-   res.send(result)
+      app.get('/borrowed-books',verifyToken,async(req,res)=>{
+        const queryEmail= req?.query.email;
+         let query= {}
+         if (queryEmail) {
+            query={email:req.query.email}
+           
+         }
+         const result= await borrowedBooks.find(query).toArray()
+         console.log(result);     
+         res.send(result)
+     
       })
 
 
@@ -141,6 +228,50 @@ async function run() {
         res.send(result)
           console.log(result,'update done');
        })
+
+
+    //  update bookcard just
+    app.put('/update/:id',async(req,res)=>{
+        const id = req.params.id
+        const filter= {_id: new ObjectId(id)}
+        const user= req.body;
+        console.log(user);
+         
+        const updateUser= {
+            $set:{
+            bookName: user.bookName,
+            quantity: user.quantity,
+            rating: user.rating,
+            author: user.author,
+            category: user.category
+
+            }
+             
+            
+        }
+        const result = await booksDb.updateOne(filter,updateUser)
+        console.log(result);
+        res.send(result)
+          
+       })
+
+    //    cookie relate api
+
+    app.post('/jwt',async(req,res)=>{
+        const user= req.body;
+     
+     const token= jwt.sign(user,process.env.ACCESS_TOKEN, {expiresIn:'2h'}) ;
+     console.log(token)
+     
+      res.cookie('token',token,{
+        httpOnly:true,
+        secure:true
+      }).send({success:true})
+
+     })  
+
+
+    
 
 
       
