@@ -37,7 +37,7 @@ async function run() {
     await client.connect();
     const database= client.db('book-library').collection('bookcategory');
     const booksDb=client.db('book-library').collection('books');
-
+    const borrowedBooks= client.db('book-library').collection('borrowed-books')
     app.get('/book-category',async(req,res)=>{
          
         const result= await database.find({}).toArray();
@@ -54,7 +54,7 @@ async function run() {
 
     // get specific book from booksDb collection
    
-    app.get('/books/:id',async(req,res)=>{
+    app.get('/findbooksbyid/:id',async(req,res)=>{
          const id= req.params.id;
          const filterId= {_id: new ObjectId(id)}
         const result= await booksDb.find(filterId).toArray();
@@ -80,7 +80,25 @@ async function run() {
    res.send(result)
       })
     
-   
+    //    post borrowed-books to borrowed-book collection
+    
+    
+    app.post('/borrowed-books',async(req,res)=>{
+        let body= req.body;
+        body.borrowedDate= new Date()
+        const result= await borrowedBooks.insertOne(body)
+   console.log(result);     
+   res.send(result)
+      })
+
+         //    post borrowed-books to borrowed-book collection
+      app.get('/borrowed-books',async(req,res)=>{
+      
+        const result= await borrowedBooks.find({}).toArray()
+       console.log(result);     
+   res.send(result)
+      })
+
 
 
 
