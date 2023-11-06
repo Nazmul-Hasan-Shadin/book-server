@@ -51,9 +51,10 @@ const verifyToken=async(req,res,next)=>{
 
      }
 
- jwt.verify(token,secret,(error,decoded)=>{
+ jwt.verify(token,process.env.ACCESS_TOKEN,(error,decoded)=>{
      if (error) {
-       return res.send({message:'error '})
+       return res.status(401).send({message:'error '})
+
      }
      console.log(decoded ,'decoded gmail');
      req.user=decoded
@@ -93,7 +94,7 @@ const verifyToken=async(req,res,next)=>{
 
     // find a single book and update its quantity
 
-    app.put('/findbooksbyid/:id',async(req,res)=>{
+    app.put('/findbooksbyid/:id',verifyToken,async(req,res)=>{
         const id= req.params.id;
         const filterId= {_id: new ObjectId(id)}
         const updateQuantity= {
@@ -132,7 +133,7 @@ const verifyToken=async(req,res,next)=>{
 
     //  add book to database 
 
-    app.post('/books',async(req,res)=>{
+    app.post('/books',verifyToken,async(req,res)=>{
         const body= req.body;
         const result= await booksDb.insertOne(body)
    console.log(result);     
@@ -144,10 +145,11 @@ const verifyToken=async(req,res,next)=>{
     //    post borrowed-books to borrowed-book collection
     
     
-    app.post('/borrowed-books',async(req,res)=>{
+    app.post('/borrowed-books',verifyToken,async(req,res)=>{
          
         let body= req.body;
         body.borrowedDate= new Date()
+        console.log(body,'iam body come here for post to borrowed books');
       
         // find existing book
    
@@ -157,14 +159,15 @@ const verifyToken=async(req,res,next)=>{
     //    })
 
       const existBorrowedBook= await  borrowedBooks.findOne({
-         unique:"unique"
+         uniqueId:body.uniqueId,
+         email: body.email
          
        })
 
 
 
         if (existBorrowedBook) {
-       res.send({erro:'you have already  added this book'})
+       res.status(403).send({erro:'you have already  added this book'})
         }
       else{
 
@@ -176,6 +179,7 @@ const verifyToken=async(req,res,next)=>{
 
          //    get borrowed-books from borrowed-book collection
       app.get('/borrowed-books',verifyToken,async(req,res)=>{
+        console.log(req.cookies,'cookies');
         const queryEmail= req?.query.email;
          let query= {}
          if (queryEmail) {
@@ -202,7 +206,7 @@ const verifyToken=async(req,res,next)=>{
 
     //update book quantity after borrowed
     
-    app.put('/books/:id',async(req,res)=>{
+    app.put('/books/:id',verifyToken,async(req,res)=>{
      
       
         const user= req.body;
@@ -231,7 +235,7 @@ const verifyToken=async(req,res,next)=>{
 
 
     //  update bookcard just
-    app.put('/update/:id',async(req,res)=>{
+    app.put('/update/:id',verifyToken,async(req,res)=>{
         const id = req.params.id
         const filter= {_id: new ObjectId(id)}
         const user= req.body;
@@ -269,6 +273,14 @@ const verifyToken=async(req,res,next)=>{
       }).send({success:true})
 
      })  
+
+
+    //  jwt logout if cookie invaild
+
+    app.post('/logout',(req,res)=>{
+        res.clearCookie('token')
+        res.status(404).send({message:"you are logged out"})
+    })
 
 
     
