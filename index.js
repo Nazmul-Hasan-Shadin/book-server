@@ -10,7 +10,8 @@ const app = express();
 const secret= 'iloveyou'
 const port= process.env.PORT || 5000;
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: ['https://book-library2.firebaseapp.com'],
+    // origin: ['http://localhost:5173/'],
     credentials:true
 }))
 app.use(express.json())
@@ -38,12 +39,14 @@ async function run() {
     const database= client.db('book-library').collection('bookcategory');
     const booksDb=client.db('book-library').collection('books');
     const borrowedBooks= client.db('book-library').collection('borrowed-books')
+    const authors= client.db('book-library').collection('author')
+    
 
 //  verify token
 
 const verifyToken=async(req,res,next)=>{
     const {token}= req.cookies;
-    console.log('usertoken is ', token);
+    console.log('usertoken is ',token);
 
 
     if (!token) {
@@ -85,32 +88,42 @@ const verifyToken=async(req,res,next)=>{
     // get specific book from booksDb collection
    
     app.get('/findbooksbyid/:id',async(req,res)=>{
-         const id= req.params.id;
-         const filterId= {_id: new ObjectId(id)}
-        const result= await booksDb.find(filterId).toArray()
-        res.send(result)
+        try {
+            const id= req.params.id;
+            const filterId= {_id: new ObjectId(id)}
+           const result= await booksDb.find(filterId).toArray()
+           res.send(result)
+        } catch (error) {
+            return res.send({error:true , message:error.message})
+        }
 
     })
 
     // find a single book and update its quantity
 
     app.put('/findbooksbyid/:id',verifyToken,async(req,res)=>{
-        const id= req.params.id;
-        const filterId= {_id: new ObjectId(id)}
-        const updateQuantity= {
-            $inc:{
-     
-             quantity:1
-            
-
+       
+        try {
+            const id= req.params.id;
+            const filterId= {_id: new ObjectId(id)}
+            const updateQuantity= {
+                $inc:{
+         
+                 quantity:1
+                
+    
+                }
+    
+                
             }
-
-            
+            const result = await booksDb.updateOne(filterId,updateQuantity)
+            console.log(result,'update done');
+          
+            res.send(result)
+        } 
+        catch (error) {
+            return res.send({error:true , message:error.message})
         }
-        const result = await booksDb.updateOne(filterId,updateQuantity)
-        console.log(result,'update done');
-      
-        res.send(result)
           
 
    })
@@ -119,16 +132,24 @@ const verifyToken=async(req,res,next)=>{
     // find all books based on category 
 
     app.get('/books/:id',async(req,res)=>{
-         const id= req.params.id;
-        const result= await booksDb.find({category:id}).toArray()
-        res.send(result)
+        try {
+            const id= req.params.id;
+            const result= await booksDb.find({category:id}).toArray()
+            res.send(result)
+        } catch (error) {
+           return res.send({error:true , message:error.message})
+        }
     })
     // signleBook load
     app.get('/single-book/:id',async(req,res)=>{
+      try {
         const id= req.params.id;
         const filter= {_id: new ObjectId(id)}
        const result= await booksDb.findOne(filter)
        res.send(result)
+      } catch (error) {
+        return res.send({error:true , message:error.message})
+      }
    })
 
     //  add book to database 
@@ -166,8 +187,9 @@ const verifyToken=async(req,res,next)=>{
 
 
 
-        if (existBorrowedBook) {
-       res.status(403).send({erro:'you have already  added this book'})
+        if(existBorrowedBook) {
+         return  res.status(403).send({erro:'you have already  added this book'})
+          
         }
       else{
 
@@ -194,11 +216,17 @@ const verifyToken=async(req,res,next)=>{
 
 
       //  delete a book fromm borrowed-book  collection
-      app.delete('/borrowed-books/:id',async(req,res)=>{
-        const query= req.params.id;
-        const id = {_id: new ObjectId(query)}
-         const result= await borrowedBooks.deleteOne(id)
-         res.send(result)
+      app.delete('/borrowed-books/:id' , verifyToken,async(req,res)=>{
+        
+        try {
+            const query= req.params.id;
+            const id = {_id: new ObjectId(query)}
+             const result= await borrowedBooks.deleteOne(id)
+             res.send(result)
+        } 
+        catch (error) {
+            return res.send({error:true , message:error.message})
+        }
          
     
        }) 
@@ -209,6 +237,7 @@ const verifyToken=async(req,res,next)=>{
     app.put('/books/:id',verifyToken,async(req,res)=>{
      
       
+     try {
         const user= req.body;
 
         console.log(user);
@@ -231,31 +260,43 @@ const verifyToken=async(req,res,next)=>{
         const result = await booksDb.updateOne(filter,updateUser)
         res.send(result)
           console.log(result,'update done');
+     } 
+     
+     catch (error) {
+        return res.send({error:true , message:error.message})
+     }
        })
 
 
     //  update bookcard just
     app.put('/update/:id',verifyToken,async(req,res)=>{
-        const id = req.params.id
-        const filter= {_id: new ObjectId(id)}
-        const user= req.body;
-        console.log(user);
-         
-        const updateUser= {
-            $set:{
-            bookName: user.bookName,
-            quantity: user.quantity,
-            rating: user.rating,
-            author: user.author,
-            category: user.category
-
-            }
+        
+        try {
+            const id = req.params.id
+            const filter= {_id: new ObjectId(id)}
+            const user= req.body;
+            console.log(user);
              
-            
+            const updateUser= {
+                $set:{
+                bookName: user.bookName,
+                quantity: user.quantity,
+                rating: user.rating,
+                author: user.author,
+                category: user.category
+    
+                }
+                 
+                
+            }
+            const result = await booksDb.updateOne(filter,updateUser)
+            console.log(result);
+            res.send(result)
+        } 
+        
+        catch (error) {
+            return res.send({error:true , message:error.message})
         }
-        const result = await booksDb.updateOne(filter,updateUser)
-        console.log(result);
-        res.send(result)
           
        })
 
@@ -263,13 +304,17 @@ const verifyToken=async(req,res,next)=>{
 
     app.post('/jwt',async(req,res)=>{
         const user= req.body;
+        
      
      const token= jwt.sign(user,process.env.ACCESS_TOKEN, {expiresIn:'2h'}) ;
      console.log(token)
      
       res.cookie('token',token,{
-        httpOnly:true,
-        secure:true
+        httpOnly:false,
+        secure:true,
+        sameSite:'none'
+   
+     
       }).send({success:true})
 
      })  
@@ -280,6 +325,16 @@ const verifyToken=async(req,res,next)=>{
     app.post('/logout',(req,res)=>{
         res.clearCookie('token')
         res.status(404).send({message:"you are logged out"})
+    })
+
+
+    // authors data
+
+    app.get('/author',async(req,res)=>{
+         
+        const result= await authors.find({}).toArray();
+        res.send(result)
+
     })
 
 
