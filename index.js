@@ -328,11 +328,11 @@ const verifyToken=async(req,res,next)=>{
     })
 
 
-    // authors data
+    //  get authors data from db
 
     app.get('/author',async(req,res)=>{
          
-        const result= await authors.find({}).toArray();
+        const result= await authors.find().toArray();
         res.send(result)
 
     })
