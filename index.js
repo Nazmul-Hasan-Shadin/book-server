@@ -35,7 +35,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     const database= client.db('book-library').collection('bookcategory');
     const booksDb=client.db('book-library').collection('books');
     const borrowedBooks= client.db('book-library').collection('borrowed-books')
@@ -73,7 +73,7 @@ const verifyToken=async(req,res,next)=>{
 
     app.get('/book-category',async(req,res)=>{
          
-        const result= await database.find({}).toArray();
+        const result= await database.find().toArray();
         res.send(result)
 
     })
@@ -173,11 +173,7 @@ const verifyToken=async(req,res,next)=>{
         console.log(body,'iam body come here for post to borrowed books');
       
         // find existing book
-   
-    //    const existBorrowedBook= await  borrowedBooks.findOne({
-    //      uniqueId: body.uniqueid,
-    //      email:body.email
-    //    })
+ 
 
       const existBorrowedBook= await  borrowedBooks.findOne({
          uniqueId:body.uniqueId,
@@ -283,7 +279,9 @@ const verifyToken=async(req,res,next)=>{
                 quantity: user.quantity,
                 rating: user.rating,
                 author: user.author,
-                category: user.category
+                category: user.category,
+                bookImg: user.bookImg
+
     
                 }
                  
@@ -328,7 +326,7 @@ const verifyToken=async(req,res,next)=>{
     })
 
 
-    //  get authors data from db
+    //  get author authors data
 
     app.get('/author',async(req,res)=>{
          
