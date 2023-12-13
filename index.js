@@ -79,8 +79,14 @@ const verifyToken=async(req,res,next)=>{
     })
 //    get all books from books collection
     app.get('/books',async(req,res)=>{
+   
+      const filter= req.query.search
+      console.log(filter,'hi iam filter');
+      const query= {
+         bookName:{$regex:new RegExp(filter,'i')}
+      }
          
-        const result= await booksDb.find({}).toArray();
+        const result= await booksDb.find(query).toArray();
         res.send(result)
 
     })
@@ -117,7 +123,7 @@ const verifyToken=async(req,res,next)=>{
                 
             }
             const result = await booksDb.updateOne(filterId,updateQuantity)
-            console.log(result,'update done');
+           
           
             res.send(result)
         } 
@@ -157,7 +163,7 @@ const verifyToken=async(req,res,next)=>{
     app.post('/books',verifyToken,async(req,res)=>{
         const body= req.body;
         const result= await booksDb.insertOne(body)
-   console.log(result);     
+
    res.send(result)
       })
 
@@ -170,7 +176,7 @@ const verifyToken=async(req,res,next)=>{
          
         let body= req.body;
         body.borrowedDate= new Date()
-        console.log(body,'iam body come here for post to borrowed books');
+   
       
         // find existing book
  
@@ -190,14 +196,14 @@ const verifyToken=async(req,res,next)=>{
       else{
 
         const result= await borrowedBooks.insertOne(body)
-        console.log(result) 
+  
         res.send(result)
       }
       })
 
          //    get borrowed-books from borrowed-book collection
       app.get('/borrowed-books',verifyToken,async(req,res)=>{
-        console.log(req.cookies,'cookies');
+        // console.log(req.cookies,'cookies');
         const queryEmail= req?.query.email;
          let query= {}
          if (queryEmail) {
@@ -205,7 +211,7 @@ const verifyToken=async(req,res,next)=>{
            
          }
          const result= await borrowedBooks.find(query).toArray()
-         console.log(result);     
+      
          res.send(result)
      
       })
@@ -236,7 +242,7 @@ const verifyToken=async(req,res,next)=>{
      try {
         const user= req.body;
 
-        console.log(user);
+     
      const id= req.params.id
         
         const filter= {_id:new ObjectId(id)}
@@ -244,7 +250,7 @@ const verifyToken=async(req,res,next)=>{
 
     
         const quantityToNumber= Number(user.quantity)
-        console.log(quantityToNumber);
+  
         const updateUser= {
             $set:{
      
@@ -255,7 +261,7 @@ const verifyToken=async(req,res,next)=>{
         }
         const result = await booksDb.updateOne(filter,updateUser)
         res.send(result)
-          console.log(result,'update done');
+
      } 
      
      catch (error) {
@@ -271,7 +277,7 @@ const verifyToken=async(req,res,next)=>{
             const id = req.params.id
             const filter= {_id: new ObjectId(id)}
             const user= req.body;
-            console.log(user);
+           
              
             const updateUser= {
                 $set:{
@@ -288,7 +294,7 @@ const verifyToken=async(req,res,next)=>{
                 
             }
             const result = await booksDb.updateOne(filter,updateUser)
-            console.log(result);
+    
             res.send(result)
         } 
         
@@ -305,7 +311,7 @@ const verifyToken=async(req,res,next)=>{
         
      
      const token= jwt.sign(user,process.env.ACCESS_TOKEN, {expiresIn:'2h'}) ;
-     console.log(token)
+
      
       res.cookie('token',token,{
         httpOnly:false,
