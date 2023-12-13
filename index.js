@@ -10,8 +10,8 @@ const app = express();
 const secret= 'iloveyou'
 const port= process.env.PORT || 5000;
 app.use(cors({
-    // origin: ['https://book-library2.firebaseapp.com'],
-    origin: ['http://localhost:5173'],
+    origin: ['https://book-library2.firebaseapp.com'],
+    // origin: ['http://localhost:5173'],
     credentials:true
 }))
 app.use(express.json())
